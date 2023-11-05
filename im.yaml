@@ -1,0 +1,5 @@
+mysql:
+  dns: "root:cq194068971@tcp(127.0.0.1:3306)/shy_im?charset=utf8mb4&parseTime=True&loc=Local"
+redis:
+  address: "127.0.0.1:6379"
+  password: ""
