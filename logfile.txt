@@ -1,0 +1,2 @@
+{"time":"2023-11-06 13:07:52","level":"ERROR","source":{"function":"main.main","file":"C:/Users/19406/Desktop/go/shyIM/main.go","line":15},"msg":"slog test"}
+{"time":"2023-11-06 13:09:15","level":"INFO","source":{"function":"main.main","file":"C:/Users/19406/Desktop/go/shyIM/main.go","line":15},"msg":"slog test"}
