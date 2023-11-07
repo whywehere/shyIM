@@ -11,3 +11,7 @@ app:
   ip: "127.0.0.1"
   http_server_port: "9091"
   rpc_port: "9092"
+  salt: "whyweher2"
+jwt:
+  sign_key: "shyIM"
+  expire_time: 720

@@ -26,7 +26,12 @@ type Config struct {
 		IP             string `mapstructure:"ip"`
 		HttpServerPort int    `mapstructure:"http_server_port"`
 		RPCPort        int    `mapstructure:"rpc_port"`
+		Salt           string `mapstructure:"salt"`
 	} `mapstructure:"app"`
+	JWT struct {
+		SignKey    string        `mapstructure:"sign_key"`
+		ExpireTime time.Duration `mapstructure:"expire_time"`
+	} `mapstructure:"jwt"`
 }
 
 func Init(configPath string) error {

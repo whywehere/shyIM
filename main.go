@@ -5,6 +5,7 @@ import (
 	"shyIM/config"
 	"shyIM/pkg/db"
 	"shyIM/pkg/etcd"
+	"shyIM/pkg/logger"
 )
 
 func main() {
@@ -18,7 +19,7 @@ func main() {
 		panic(err)
 	}
 	if err := etcd.InitEtcd(); err != nil {
-
+		logger.Slog.Error("Etcd", "[ERROR]", err)
 	}
 
 }
