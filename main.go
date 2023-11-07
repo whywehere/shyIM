@@ -5,7 +5,8 @@ import (
 	"shyIM/config"
 	"shyIM/pkg/db"
 	"shyIM/pkg/etcd"
-	"shyIM/pkg/logger"
+	"shyIM/pkg/mq"
+	"shyIM/router"
 )
 
 func main() {
@@ -18,8 +19,11 @@ func main() {
 	if err := db.InitDB(); err != nil {
 		panic(err)
 	}
-	if err := etcd.InitEtcd(); err != nil {
-		logger.Slog.Error("Etcd", "[ERROR]", err)
-	}
+	mq.InitMessageMQ(config.GlobalConfig.RabbitMQ.URL)
 
+	go etcd.Start()
+
+	go router.HTTPRouter()
+
+	go router.WSRouter()
 }

@@ -23,15 +23,23 @@ type Config struct {
 	} `mapstructure:"etcd"`
 
 	APP struct {
-		IP             string `mapstructure:"ip"`
-		HttpServerPort int    `mapstructure:"http_server_port"`
-		RPCPort        int    `mapstructure:"rpc_port"`
-		Salt           string `mapstructure:"salt"`
+		IP                  string        `mapstructure:"ip"`
+		HttpServerPort      int           `mapstructure:"http_server_port"`
+		RPCPort             int           `mapstructure:"rpc_port"`
+		Salt                string        `mapstructure:"salt"`
+		WorkerPoolSize      int           `mapstructure:"worker_pool_size"`
+		MaxWorkerTask       int           `mapstructure:"max_worker_task"`
+		HeartbeatTimeout    time.Duration `mapstructure:"heartbeat_time"`
+		HeartbeatInterval   time.Duration `mapstructure:"heartbeat_interval time"`
+		WebSocketServerPort string        `mapstructure:"websocket_server_port"`
 	} `mapstructure:"app"`
 	JWT struct {
 		SignKey    string        `mapstructure:"sign_key"`
 		ExpireTime time.Duration `mapstructure:"expire_time"`
 	} `mapstructure:"jwt"`
+	RabbitMQ struct {
+		URL string `mapstructure:"url"`
+	} `mapstructure:"rabbitmq"`
 }
 
 func Init(configPath string) error {

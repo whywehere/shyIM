@@ -5,6 +5,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"shyIM/pkg/db"
+	"shyIM/pkg/protocol/pb"
 	"time"
 )
 
@@ -93,8 +94,8 @@ func MessagesToPB(messages []Message) []*pb.Message {
 	return pbMessages
 }
 
-func CreateMessage(msgs ...*Message) error {
-	return db.DB.Create(msgs).Error
+func CreateMessage(messages ...*Message) error {
+	return db.DB.Create(messages).Error
 }
 
 func ListByUserIdAndSeq(userId, seq uint64, limit int) ([]Message, bool, error) {

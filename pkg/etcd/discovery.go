@@ -28,10 +28,11 @@ func NewDiscovery() (*Discovery, error) {
 	return &Discovery{client: client}, nil
 }
 
-func (d *Discovery) WatchServices(prefix string) error {
+func (d *Discovery) WatchServices(prefix string) {
 	resp, err := d.client.Get(context.TODO(), prefix, clientV3.WithPrefix())
 	if err != nil {
-		return err
+		logger.Slog.Error("Failed to Get Discovery", "[ERROR]", err)
+		return
 	}
 	for i := range resp.Kvs {
 		if v := resp.Kvs[i]; v != nil {
@@ -39,8 +40,7 @@ func (d *Discovery) WatchServices(prefix string) error {
 		}
 	}
 	d.watcher(prefix)
-
-	return nil
+	return
 }
 
 func (d *Discovery) watcher(prefix string) {
