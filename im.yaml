@@ -3,3 +3,11 @@ mysql:
 redis:
   address: "127.0.0.1:6379"
   password: ""
+etcd:
+  endpoints:
+    - "localhost:2379"
+  timeout: 5
+app:
+  ip: "127.0.0.1"
+  http_server_port: "9091"
+  rpc_port: "9092"

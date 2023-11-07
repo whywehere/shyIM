@@ -1,6 +1,9 @@
 package config
 
-import "github.com/spf13/viper"
+import (
+	"github.com/spf13/viper"
+	"time"
+)
 
 var GlobalConfig *Config
 
@@ -13,6 +16,17 @@ type Config struct {
 		Address  string `mapstructure:"address"`  // Redis 地址
 		Password string `mapstructure:"password"` // Redis 认证密码
 	} `mapstructure:"redis"`
+
+	Etcd struct {
+		Endpoints []string      `mapstructure:"endpoints"`
+		Timeout   time.Duration `mapstructure:"timeout"`
+	} `mapstructure:"etcd"`
+
+	APP struct {
+		IP             string `mapstructure:"ip"`
+		HttpServerPort int    `mapstructure:"http_server_port"`
+		RPCPort        int    `mapstructure:"rpc_port"`
+	} `mapstructure:"app"`
 }
 
 func Init(configPath string) error {
