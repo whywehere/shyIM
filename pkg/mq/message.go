@@ -17,7 +17,7 @@ var (
 )
 
 func InitMessageMQ(url string) {
-	MessageMQ = InitRabbitMQ(url, MessageCreateHandler, MessageQueue, MessageRoutingKey, MessageExchangeName)
+	MessageMQ = InitRabbitMQ(url, MessageCreateHandler)
 }
 
 func MessageCreateHandler(d rabbitmq.Delivery) rabbitmq.Action {

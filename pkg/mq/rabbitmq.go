@@ -1,8 +1,8 @@
 package mq
 
 import (
-	"fmt"
 	"github.com/wagslane/go-rabbitmq"
+	"shyIM/pkg/logger"
 )
 
 type Conn struct {
@@ -16,7 +16,7 @@ type Conn struct {
 
 // InitRabbitMQ 初始化连接
 // 启动消费者、初始化生产者
-func InitRabbitMQ(url string, f rabbitmq.Handler, queue, routingKey, exchangeName string) *Conn {
+func InitRabbitMQ(url string, f rabbitmq.Handler) *Conn {
 	// 初始化连接
 	conn, err := rabbitmq.NewConn(url)
 	if err != nil {
@@ -25,11 +25,11 @@ func InitRabbitMQ(url string, f rabbitmq.Handler, queue, routingKey, exchangeNam
 	// 消费者，注册时已经启动了
 	consumer, err := rabbitmq.NewConsumer(
 		conn,
-		f,     // 实际进行消费处理的函数
-		queue, // 队列名称
-		rabbitmq.WithConsumerOptionsRoutingKey(routingKey),     // routing-key
-		rabbitmq.WithConsumerOptionsExchangeName(exchangeName), // exchange 名称
-		rabbitmq.WithConsumerOptionsExchangeDeclare,            // 声明交换器
+		f,            // 实际进行消费处理的函数
+		MessageQueue, // 队列名称
+		rabbitmq.WithConsumerOptionsRoutingKey(MessageRoutingKey),     // routing-key
+		rabbitmq.WithConsumerOptionsExchangeName(MessageExchangeName), // exchange 名称
+		rabbitmq.WithConsumerOptionsExchangeDeclare,                   // 声明交换器
 	)
 	if err != nil {
 		panic(err)
@@ -38,8 +38,8 @@ func InitRabbitMQ(url string, f rabbitmq.Handler, queue, routingKey, exchangeNam
 	// 生产者
 	publisher, err := rabbitmq.NewPublisher(
 		conn,
-		rabbitmq.WithPublisherOptionsExchangeName(exchangeName), // exchange 名称
-		rabbitmq.WithPublisherOptionsExchangeDeclare,            // 声明交换器
+		rabbitmq.WithPublisherOptionsExchangeName(MessageExchangeName), // exchange 名称
+		rabbitmq.WithPublisherOptionsExchangeDeclare,                   // 声明交换器
 	)
 	if err != nil {
 		panic(err)
@@ -59,16 +59,16 @@ func InitRabbitMQ(url string, f rabbitmq.Handler, queue, routingKey, exchangeNam
 		conn:         conn,
 		consumer:     consumer,
 		publisher:    publisher,
-		queue:        queue,
-		routingKey:   routingKey,
-		exchangeName: exchangeName,
+		queue:        MessageQueue,
+		routingKey:   MessageRoutingKey,
+		exchangeName: MessageExchangeName,
 	}
 }
 
 // Publish 发送消息，该消息实际由执行 InitRabbitMQ 注册时传入的 f 消费
 func (c *Conn) Publish(data []byte) error {
 	if data == nil || len(data) == 0 {
-		fmt.Println("data 为空，publish 不发送")
+		logger.Slog.Error("data is empty")
 		return nil
 	}
 	return c.publisher.Publish(
