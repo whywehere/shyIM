@@ -77,9 +77,8 @@ func (c *Conn) HandlerMessage(bytes []byte) {
 	// TODO 所有错误都需要写回给客户端
 	// 消息解析 proto string -> struct
 	input := new(pb.Input)
-	err := proto.Unmarshal(bytes, input)
-	if err != nil {
-		logger.Slog.Error("proto unmarshal: ", "[ERROR]", err)
+	if err := proto.Unmarshal(bytes, input); err != nil {
+		logger.Slog.Error("proto unmarshal: ", "error", err)
 		return
 	}
 	// 对未登录用户进行拦截
@@ -234,28 +233,24 @@ func (c *Conn) Stop() {
 	// 关闭管道
 	close(c.exitCh)
 	close(c.sendCh)
-
-	fmt.Println("Conn Stop() ... UserId = ", c.GetUserId())
+	logger.Slog.Info("Conn is closed", "UserId", c.GetUserId())
 }
 
 // KeepLive 更新心跳
 func (c *Conn) KeepLive() {
-	now := time.Now()
 	c.heartMutex.Lock()
 	defer c.heartMutex.Unlock()
-	c.lastHeartBeatTime = now
+	c.lastHeartBeatTime = time.Now()
 }
 
 // IsAlive 是否存活
 func (c *Conn) IsAlive() bool {
-	now := time.Now()
-
 	c.heartMutex.Lock()
 	c.isCloseMutex.RLock()
 	defer c.isCloseMutex.RUnlock()
 	defer c.heartMutex.Unlock()
 
-	if c.isClose || now.Sub(c.lastHeartBeatTime) > config.GlobalConfig.APP.HeartbeatTimeout*time.Second {
+	if c.isClose || time.Now().Sub(c.lastHeartBeatTime) > time.Duration(config.GlobalConfig.APP.HeartbeatTimeout)*time.Second {
 		return false
 	}
 	return true

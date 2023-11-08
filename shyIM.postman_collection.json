@@ -1,0 +1,193 @@
+{
+	"info": {
+		"_postman_id": "32555e3d-da34-4bc2-a9ba-e08aeb50a81d",
+		"name": "shyIM",
+		"description": "IM聊天系统",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "23502096"
+	},
+	"item": [
+		{
+			"name": "UserLogin",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "token",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MDIwMDA0NzR9.467kFHszczXG5ND_7XgwPcIGjmOERhXUCCdi1jyoygo",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "phone_number",
+							"value": "13097074116",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "123456",
+							"type": "text"
+						}
+					]
+				},
+				"url": "http://localhost:8081/login",
+				"description": "用户登录"
+			},
+			"response": []
+		},
+		{
+			"name": "UserRegister",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "nickname",
+							"value": "jojo",
+							"type": "text"
+						},
+						{
+							"key": "phone_number",
+							"value": "15979769713",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "123456",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8081/register",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"register"
+					],
+					"query": [
+						{
+							"key": "nickname",
+							"value": "whyweher2",
+							"disabled": true
+						},
+						{
+							"key": "phone_number",
+							"value": "13097074116",
+							"disabled": true
+						},
+						{
+							"key": "password",
+							"value": "123456",
+							"disabled": true
+						}
+					]
+				},
+				"description": "注册新用户"
+			},
+			"response": []
+		},
+		{
+			"name": "AddFriend",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "token",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MDIwMDE2NDR9.WbFeaLLALko_wnIuKptBT8PSYKI5OtNn2fyRymNI5rs",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "friend_id",
+							"value": "2",
+							"type": "text"
+						}
+					]
+				},
+				"url": "http://localhost:8081/friend/add"
+			},
+			"response": []
+		},
+		{
+			"name": "CreateGroup",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "token",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MDIwMDE2NDR9.WbFeaLLALko_wnIuKptBT8PSYKI5OtNn2fyRymNI5rs",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "name",
+							"value": "心之刚",
+							"type": "text"
+						},
+						{
+							"key": "ids",
+							"value": "2",
+							"type": "text"
+						},
+						{
+							"key": "ids",
+							"value": "3",
+							"type": "text"
+						}
+					]
+				},
+				"url": "http://localhost:8081/group/create",
+				"description": "创建群组"
+			},
+			"response": []
+		},
+		{
+			"name": "GetGroupUsers",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "token",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MDIwMDE2NDR9.WbFeaLLALko_wnIuKptBT8PSYKI5OtNn2fyRymNI5rs",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8081/group_user/list?group_id=1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"group_user",
+						"list"
+					],
+					"query": [
+						{
+							"key": "group_id",
+							"value": "1"
+						}
+					]
+				},
+				"description": "获取群成员列表"
+			},
+			"response": []
+		}
+	]
+}

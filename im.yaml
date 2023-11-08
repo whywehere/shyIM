@@ -9,7 +9,7 @@ etcd:
   timeout: 5
 app:
   ip: "127.0.0.1"
-  http_server_port: "9091"
+  http_server_port: ":8081"
   rpc_port: "9092"
   salt: "whyweher2"
   worker_pool_size: 10  # 业务 worker 队列数量

@@ -21,7 +21,7 @@ func NewDiscovery() (*Discovery, error) {
 		DialTimeout: config.GlobalConfig.Etcd.Timeout,
 	})
 	if err != nil {
-		logger.Slog.Error("Failed to create etcd client ", "[ERROR]", err)
+		logger.Slog.Error("Failed to create etcd client", "[ERROR]", err)
 		return nil, err
 	}
 	logger.Slog.Info("Creating Discovery succeeded")

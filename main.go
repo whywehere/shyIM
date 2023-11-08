@@ -26,4 +26,5 @@ func main() {
 	go router.HTTPRouter()
 
 	go router.WSRouter()
+	select {}
 }

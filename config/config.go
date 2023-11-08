@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"github.com/spf13/viper"
 	"time"
 )
@@ -23,15 +24,15 @@ type Config struct {
 	} `mapstructure:"etcd"`
 
 	APP struct {
-		IP                  string        `mapstructure:"ip"`
-		HttpServerPort      int           `mapstructure:"http_server_port"`
-		RPCPort             int           `mapstructure:"rpc_port"`
-		Salt                string        `mapstructure:"salt"`
-		WorkerPoolSize      int           `mapstructure:"worker_pool_size"`
-		MaxWorkerTask       int           `mapstructure:"max_worker_task"`
-		HeartbeatTimeout    time.Duration `mapstructure:"heartbeat_time"`
-		HeartbeatInterval   time.Duration `mapstructure:"heartbeat_interval time"`
-		WebSocketServerPort string        `mapstructure:"websocket_server_port"`
+		IP                  string `mapstructure:"ip"`
+		HttpServerPort      string `mapstructure:"http_server_port"`
+		RPCPort             string `mapstructure:"rpc_port"`
+		Salt                string `mapstructure:"salt"`
+		WorkerPoolSize      int    `mapstructure:"worker_pool_size"`
+		MaxWorkerTask       int    `mapstructure:"max_worker_task"`
+		HeartbeatTimeout    int    `mapstructure:"heartbeat_time"`
+		HeartbeatInterval   int    `mapstructure:"heartbeat_interval"`
+		WebSocketServerPort string `mapstructure:"websocket_server_port"`
 	} `mapstructure:"app"`
 	JWT struct {
 		SignKey    string        `mapstructure:"sign_key"`
@@ -51,5 +52,6 @@ func Init(configPath string) error {
 	if err := viper.Unmarshal(GlobalConfig); err != nil {
 		return err
 	}
+	fmt.Println(GlobalConfig.APP)
 	return nil
 }

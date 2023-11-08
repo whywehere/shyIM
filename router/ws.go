@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-var upgrader = websocket.Upgrader{
+var upGrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
@@ -33,6 +33,7 @@ func WSRouter() {
 	server.StartWorkerPool()
 
 	// 开启心跳超时检测
+	//fmt.Println("HeartbeatInterval: ", time.Second*time.Duration(config.GlobalConfig.APP.HeartbeatInterval))
 	heartbeatChecker := ws.NewHeartbeatChecker(time.Second*time.Duration(config.GlobalConfig.APP.HeartbeatInterval), server)
 
 	go heartbeatChecker.Start()
@@ -47,7 +48,7 @@ func WSRouter() {
 
 	r.GET("/ws", func(c *gin.Context) {
 		// 升级协议  http -> websocket
-		WsConn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+		WsConn, err := upGrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
 			logger.Slog.Error("[WebSocket Connect Failed]", "[ERROR]", err)
 			return

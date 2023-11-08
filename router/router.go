@@ -1,10 +1,8 @@
 package router
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"shyIM/config"
 	"shyIM/pkg/logger"
 	"shyIM/pkg/middlewares"
 	"shyIM/service"
@@ -12,6 +10,8 @@ import (
 
 func HTTPRouter() {
 	r := gin.Default()
+
+	gin.SetMode(gin.ReleaseMode)
 
 	// 用户注册
 	r.POST("/register", service.RegisterHandler)
@@ -30,8 +30,7 @@ func HTTPRouter() {
 		// 获取群成员列表
 		auth.GET("/group_user/list", service.GroupUserList)
 	}
-	httpAddr := fmt.Sprintf("%s:%s", config.GlobalConfig.APP.IP, config.GlobalConfig.APP.HttpServerPort)
-	if err := r.Run(httpAddr); err != nil && err != http.ErrServerClosed {
+	if err := r.Run(":8081"); err != nil && err != http.ErrServerClosed {
 		logger.Slog.Error("gin engine run error", "[ERROR]", err)
 	}
 }
