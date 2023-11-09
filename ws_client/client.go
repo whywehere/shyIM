@@ -79,7 +79,7 @@ func (c *Client) ReadLine() {
 		}
 	}
 	for {
-		readLine("send msg", &msg)
+		readLine(">>", &msg)
 		readLine("接收人id(user_id/group_id): ", &receiverId)
 		readLine("发送消息类型(1-单聊、2-群聊): ", &sessionType)
 		message := &pb.Message{
@@ -92,7 +92,7 @@ func (c *Client) ReadLine() {
 		}
 		upMsg := &pb.UpMsg{
 			Msg:      message,
-			ClientId: c.clientId,
+			ClientId: c.GetClientId(),
 		}
 		c.SendMsg(pb.CmdType_CT_Message, upMsg)
 
@@ -128,11 +128,10 @@ func (c *Client) ReadLine() {
 }
 
 func (c *Client) Heartbeat() {
-	//  2min 一次
 	ticker := time.NewTicker(time.Second * 2 * 60)
 	for range ticker.C {
 		c.SendMsg(pb.CmdType_CT_Heartbeat, &pb.HeartbeatMsg{})
-		//fmt.Println("发送心跳", time.Now().Format("2006-01-02 15:04:05"))
+		fmt.Println("[HeartBeat]", time.Now().Format("2006-01-02 15:04:05"))
 	}
 }
 func (c *Client) Sync() {
@@ -150,8 +149,10 @@ func (c *Client) Receive() {
 }
 
 func (c *Client) HandlerMessage(bytes []byte) {
+
 	outputBatchMsg := new(pb.OutputBatch)
 	err := proto.Unmarshal(bytes, outputBatchMsg)
+
 	if err != nil {
 		panic(err)
 	}
@@ -172,13 +173,12 @@ func (c *Client) HandlerMessage(bytes []byte) {
 
 			seq := c.seq
 			for _, message := range syncMsg.Messages {
-				fmt.Println("收到离线消息：", message)
+				fmt.Printf("Recive Offline message: %v\n", message)
 				if seq < message.Seq {
 					seq = message.Seq
 				}
 			}
 			c.seq = seq
-			// 如果还有，继续拉取
 			if syncMsg.HasMore {
 				c.Sync()
 			}
@@ -337,7 +337,6 @@ func Login() *Client {
 		panic(err)
 	}
 
-	fmt.Println("client code:", respData.Code, " ", respData.Msg)
 	fmt.Println("token:", client.token, "userId", client.userId)
 	return client
 }

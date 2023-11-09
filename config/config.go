@@ -19,8 +19,8 @@ type Config struct {
 	} `mapstructure:"redis"`
 
 	Etcd struct {
-		Endpoints []string      `mapstructure:"endpoints"`
-		Timeout   time.Duration `mapstructure:"timeout"`
+		Endpoints []string `mapstructure:"endpoints"`
+		Timeout   int      `mapstructure:"timeout"`
 	} `mapstructure:"etcd"`
 
 	APP struct {

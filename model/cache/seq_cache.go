@@ -33,7 +33,7 @@ func GetNextSeqId(objectType int8, objectId uint64) (uint64, error) {
 func GetNextSeqIds(objectType int8, objectIds []uint64) ([]uint64, error) {
 	script := `
        local results = {}
-       for i, key in impairs(KEYS) do
+       for i, key in ipairs(KEYS) do
            results[i] = redis.call('INCR', key)
        end
        return results
@@ -44,7 +44,7 @@ func GetNextSeqIds(objectType int8, objectIds []uint64) ([]uint64, error) {
 	}
 	res, err := redis.NewScript(script).Run(context.Background(), db.RDB, keys).Result()
 	if err != nil {
-		logger.Slog.Error("[获取seq] 失败", "[ERROR]", err)
+		logger.Slog.Error("[GetNextSeqIds] 失败", "err", err)
 		return nil, err
 	}
 	results := make([]uint64, len(objectIds))

@@ -108,7 +108,7 @@ func Send(receiverId uint64, bytes []byte) error {
 		logger.Slog.Warn("[消息处理]，用户不在线", "receiverId", receiverId)
 		return nil
 	}
-	logger.Slog.Warn("[消息处理]，用户在线", "rpcAddr", rpcAddr)
+	logger.Slog.Info("[消息处理]，用户在线", "rpcAddr", rpcAddr)
 
 	// 查询是否在本地
 	conn := ConnManager.GetConn(receiverId)
@@ -141,7 +141,7 @@ func SendToGroup(msg *pb.Message) error {
 	// 获取群成员信息
 	userIds, err := service.GetGroupUser(msg.ReceiverId)
 	if err != nil {
-		logger.Slog.Error("[群聊消息处理] 查询失败", "[ERROR]", err)
+		logger.Slog.Error("[SendToGroup] 查询失败", "err", err)
 		return err
 	}
 
@@ -153,7 +153,7 @@ func SendToGroup(msg *pb.Message) error {
 
 	// 检查当前用户是否属于该群
 	if _, ok := m[msg.SenderId]; !ok {
-		logger.Slog.Info("[群聊消息处理] 用户不属于该群组", "msg", msg)
+		fmt.Printf("发送消息者: %v 不属于该群: %v\n", msg.ReceiverId, msg.SenderId)
 		return nil
 	}
 
@@ -164,21 +164,23 @@ func SendToGroup(msg *pb.Message) error {
 	for userId := range m {
 		sendUserIds = append(sendUserIds, userId)
 	}
+
 	// 批量获取 seqId
-	seqs, err := service.GetUserNextSeqBatch(sendUserIds)
+	sequences, err := service.GetUserNextSeqBatch(sendUserIds)
 	if err != nil {
-		logger.Slog.Error("[批量获取 seq 失败]", "[ERROR]", err)
+		logger.Slog.Error("[批量获取 sequences 失败]", "err", err)
 		return err
 	}
 
 	//  k:userid v:该userId的seq
-	sendUserSet := make(map[uint64]uint64, len(seqs))
+	sendUserSet := make(map[uint64]uint64, len(sequences))
 	for i, userId := range sendUserIds {
-		sendUserSet[userId] = seqs[i]
+		sendUserSet[userId] = sequences[i]
 	}
 
 	// 创建 Message 对象
 	messages := make([]*model.Message, 0, len(m))
+
 	for userId, seq := range sendUserSet {
 		messages = append(messages, &model.Message{
 			UserID:      userId,
@@ -217,7 +219,6 @@ func SendToGroup(msg *pb.Message) error {
 	for _, addr := range services {
 		// 如果是本机，进行本地推送
 		if local == addr {
-			//fmt.Println("进行本地推送")
 			GetServer().SendMessageAll(userId2Msg)
 		} else {
 			// 如果不是本机，进行远程 RPC 调用
@@ -226,7 +227,7 @@ func SendToGroup(msg *pb.Message) error {
 			})
 
 			if err != nil {
-				fmt.Println("[消息处理] DeliverMessageAll err, err:", err)
+				logger.Slog.Error("[DeliverMessageAll]", "err", err)
 				return err
 			}
 		}

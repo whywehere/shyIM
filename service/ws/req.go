@@ -7,6 +7,7 @@ import (
 	"shyIM/config"
 	"shyIM/model"
 	"shyIM/model/cache"
+	"shyIM/pkg/logger"
 	"shyIM/pkg/protocol/pb"
 	"shyIM/pkg/utils"
 )
@@ -88,7 +89,7 @@ func (r *Req) MessageHandler() {
 	msg := new(pb.UpMsg)
 	err := proto.Unmarshal(r.data, msg)
 	if err != nil {
-		fmt.Println("[消息处理] unmarshal error,err:", err)
+		logger.Slog.Error("[MessageHandler]", "err", err)
 		return
 	}
 
@@ -112,7 +113,7 @@ func (r *Req) MessageHandler() {
 	// 给自己发一份，消息落库但是不推送
 	seq, err := SendToUser(msg.Msg, msg.Msg.SenderId)
 	if err != nil {
-		fmt.Println("[消息处理] send to 自己出错, err:", err)
+		fmt.Println("[SendToUser] err: ", err)
 		return
 	}
 
