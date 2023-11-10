@@ -18,7 +18,7 @@ import (
 const (
 	httpAddr       = "http://localhost:8081"
 	websocketAddr  = "ws://localhost:9091"
-	ResendCountMax = 3 // 超时重传最大次数
+	ResendCountMax = 5 // 超时重传最大次数
 )
 
 type Client struct {
@@ -45,8 +45,7 @@ func (c *Client) Start() {
 	}
 	c.conn = conn
 
-	fmt.Println("与 websocket 建立连接")
-	// 向 websocket 发送登录请求
+	fmt.Println("[connect websocket successfully]")
 	c.Login()
 
 	// 心跳
@@ -106,7 +105,7 @@ func (c *Client) ReadLine() {
 			for {
 				select {
 				case <-ctx.Done():
-					fmt.Println("收到ACK")
+					fmt.Println("[Receive Server ACK]")
 					return
 				case <-ticker.C:
 					if retryCount >= maxRetry {
@@ -128,12 +127,14 @@ func (c *Client) ReadLine() {
 }
 
 func (c *Client) Heartbeat() {
+	// 每两分钟发送一次HeartBeat
 	ticker := time.NewTicker(time.Second * 2 * 60)
 	for range ticker.C {
 		c.SendMsg(pb.CmdType_CT_Heartbeat, &pb.HeartbeatMsg{})
 		fmt.Println("[HeartBeat]", time.Now().Format("2006-01-02 15:04:05"))
 	}
 }
+
 func (c *Client) Sync() {
 	c.SendMsg(pb.CmdType_CT_Sync, &pb.SyncInputMsg{Seq: c.seq})
 }
@@ -162,7 +163,7 @@ func (c *Client) HandlerMessage(bytes []byte) {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("收到顶层 OutPut 消息：", msg)
+		fmt.Println("[receive server message]: ", msg)
 		switch msg.Type {
 		case pb.CmdType_CT_Sync:
 			syncMsg := new(pb.SyncOutputMsg)
