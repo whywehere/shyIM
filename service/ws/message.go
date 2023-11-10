@@ -54,7 +54,7 @@ func SendToUser(msg *pb.Message, userId uint64) (uint64, error) {
 	msg.Seq = seq
 
 	// 发给MQ
-	err = mq.MessageMQ.Publish(model.MessageToProtoMarshal(&model.Message{
+	if err = mq.MessageMQ.Publish(model.MessageToProtoMarshal(&model.Message{
 		UserID:      userId,
 		SenderID:    msg.SenderId,
 		SessionType: int8(msg.SessionType),
@@ -63,8 +63,7 @@ func SendToUser(msg *pb.Message, userId uint64) (uint64, error) {
 		Content:     msg.Content,
 		Seq:         seq,
 		SendTime:    time.UnixMilli(msg.SendTime),
-	}))
-	if err != nil {
+	})); err != nil {
 		logger.Slog.Error("[GetOutputMsg] mq.MessageMQ.Publish(messageBytes) 失败", "[ERROR]", err)
 		return 0, err
 	}
