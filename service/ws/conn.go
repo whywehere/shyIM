@@ -42,6 +42,7 @@ func NewConnection(server *Server, wsConn *websocket.Conn, ConnId uint64) *Conn 
 		isClose:           false,
 		exitCh:            make(chan struct{}, 1),
 		lastHeartBeatTime: time.Now(), // 刚连接时初始化，避免正好遇到清理执行，如果连接没有后续操作，将会在下次被心跳检测踢出
+		maxClientId:       0,
 	}
 }
 
@@ -50,7 +51,7 @@ func (c *Conn) Start() {
 	go c.StartReader()
 
 	// 开启用于写回客户端数据流程的 goroutine
-	go c.StartWriter()
+	//go c.StartWriter()
 	go c.StartWriterWithBuffer()
 }
 
@@ -64,7 +65,8 @@ func (c *Conn) StartReader() {
 		// 阻塞读
 		_, data, err := c.Socket.ReadMessage()
 		if err != nil {
-			logger.Slog.Error("websocket ReadMessage failed", "[ERROR]", err)
+			fmt.Println("[Socket.ReadMessage] ", err)
+			logger.Slog.Error("[websocket ReadMessage Failed]", "err", err)
 			return
 		}
 		// 消息处理
@@ -78,7 +80,7 @@ func (c *Conn) HandlerMessage(bytes []byte) {
 	// 消息解析 proto string -> struct
 	input := new(pb.Input)
 	if err := proto.Unmarshal(bytes, input); err != nil {
-		logger.Slog.Error("proto unmarshal: ", "error", err)
+		logger.Slog.Error("proto unmarshal ", "error", err)
 		return
 	}
 	// 对未登录用户进行拦截
@@ -275,7 +277,6 @@ func (c *Conn) SetUserId(userId uint64) {
 func (c *Conn) CompareAndIncrClientID(newMaxClientId uint64) bool {
 	c.maxClientIdMutex.Lock()
 	defer c.maxClientIdMutex.Unlock()
-
 	if c.maxClientId+1 == newMaxClientId {
 		c.maxClientId++
 		return true

@@ -34,6 +34,9 @@ func NewRegistry(key, value string, lease int64) error {
 	if err = regServer.putKeyWithLease(lease); err != nil {
 		return err
 	}
+
+	go regServer.ListenLeaseRespChan()
+
 	return nil
 }
 
@@ -58,20 +61,16 @@ func (r *Registry) putKeyWithLease(lease int64) error {
 
 // ListenLeaseRespChan 监听续租情况
 func (r *Registry) ListenLeaseRespChan() {
-	defer func(r *Registry) {
-		err := r.close()
-		if err != nil {
-			logger.Slog.Error(fmt.Sprintf("%v\n", err))
-		}
-	}(r)
+	defer r.close()
 
 	for range r.keepAliveChan {
 	}
+
 }
 
 func (r *Registry) close() error {
 	if _, err := r.client.Revoke(context.TODO(), r.leaseID); err != nil {
-		return err
+		logger.Slog.Error("client.Revoke()", "err", err)
 	}
 	logger.Slog.Info(fmt.Sprintf("撤销租约成功, leaseID:%d, Put key:%s,val:%s\n", r.leaseID, r.key, r.val))
 	return r.client.Close()

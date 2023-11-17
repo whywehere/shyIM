@@ -11,6 +11,7 @@ import (
 
 func main() {
 	var configPath string
+	// 自定义配置文件路径
 	flag.StringVar(&configPath, "c", "./im.yaml", "config path")
 	flag.Parse()
 	if err := config.Init(configPath); err != nil {

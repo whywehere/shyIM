@@ -128,17 +128,11 @@ func (cm *Server) StartOneWorker(workerID int, taskQueue chan *Req) {
 
 // SendMsgToTaskQueue 将消息交给 taskQueue，由 worker 调度处理
 func (cm *Server) SendMsgToTaskQueue(req *Req) {
-	if len(cm.taskQueue) > 0 {
-		// 根据ConnID来分配当前的连接应该由哪个worker负责处理，保证同一个连接的消息处理串行
-		// 轮询的平均分配法则
+	// 根据ConnID来分配当前的连接应该由哪个worker负责处理，保证同一个连接的消息处理串行
+	// 轮询的平均分配法则 得到需要处理此条连接的workerID
+	workerID := req.conn.ConnId % uint64(len(cm.taskQueue))
 
-		//得到需要处理此条连接的workerID
-		workerID := req.conn.ConnId % uint64(len(cm.taskQueue))
+	// 将消息发给对应的 taskQueue
+	cm.taskQueue[workerID] <- req
 
-		// 将消息发给对应的 taskQueue
-		cm.taskQueue[workerID] <- req
-	} else {
-		// 可能导致消息乱序
-		go req.f()
-	}
 }

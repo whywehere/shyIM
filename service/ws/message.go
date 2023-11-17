@@ -104,17 +104,17 @@ func Send(receiverId uint64, bytes []byte) error {
 
 	// 不在线
 	if rpcAddr == "" {
-		logger.Slog.Warn("[消息处理]，用户不在线", "receiverId", receiverId)
+		fmt.Println("[Message Send] 用户不在线: ", receiverId)
 		return nil
 	}
-	logger.Slog.Info("[消息处理]，用户在线", "rpcAddr", rpcAddr)
+	fmt.Println("[Message Send] 用户在线: ", receiverId, "rpcAddr = ", rpcAddr)
 
 	// 查询是否在本地
 	conn := ConnManager.GetConn(receiverId)
 	if conn != nil {
 		// 发送本地消息
 		conn.SendMsg(receiverId, bytes)
-		logger.Slog.Info("[Send]， 发送本地消息给用户 ", "receiverId", receiverId)
+		fmt.Println("发送消息给本地用户, ReceiverId: ", receiverId)
 		return nil
 	}
 
@@ -199,7 +199,6 @@ func SendToGroup(msg *pb.Message) error {
 		fmt.Println("[消息处理] 群聊消息发送 MQ 失败,err:", err)
 		return err
 	}
-
 	// 组装消息，进行推送
 	userId2Msg := make(map[uint64][]byte, len(m))
 	for userId, seq := range sendUserSet {

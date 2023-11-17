@@ -2,11 +2,13 @@ package etcd
 
 import (
 	"context"
+	"fmt"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	clientV3 "go.etcd.io/etcd/client/v3"
 	"shyIM/config"
 	"shyIM/pkg/logger"
 	"sync"
+	"time"
 )
 
 // Discovery 服务发现
@@ -18,7 +20,7 @@ type Discovery struct {
 func NewDiscovery() (*Discovery, error) {
 	client, err := clientV3.New(clientV3.Config{
 		Endpoints:   config.GlobalConfig.Etcd.Endpoints,
-		DialTimeout: config.GlobalConfig.Etcd.Timeout,
+		DialTimeout: time.Duration(config.GlobalConfig.Etcd.Timeout) * time.Second,
 	})
 	if err != nil {
 		logger.Slog.Error("Failed to create etcd client", "[ERROR]", err)
@@ -31,7 +33,7 @@ func NewDiscovery() (*Discovery, error) {
 func (d *Discovery) WatchServices(prefix string) {
 	resp, err := d.client.Get(context.TODO(), prefix, clientV3.WithPrefix())
 	if err != nil {
-		logger.Slog.Error("Failed to Get Discovery", "[ERROR]", err)
+		logger.Slog.Error("Failed to Get Discovery", "err", err)
 		return
 	}
 	for i := range resp.Kvs {
@@ -66,7 +68,9 @@ func (d *Discovery) GetServices() []string {
 	addrs := make([]string, 0)
 	d.serverMap.Range(func(key, value interface{}) bool {
 		addrs = append(addrs, value.(string))
+		fmt.Println(value.(string))
 		return true
 	})
+
 	return addrs
 }

@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"shyIM/pkg/logger"
 	"shyIM/pkg/protocol/pb"
 	"strconv"
 	"sync"
@@ -46,12 +47,13 @@ func (c *Client) Start() {
 	c.conn = conn
 
 	fmt.Println("[connect websocket successfully]")
+
 	c.Login()
 
 	// 心跳
 	go c.Heartbeat()
 
-	time.Sleep(time.Millisecond * 100)
+	time.Sleep(time.Second)
 
 	// 离线消息同步
 	go c.Sync()
@@ -59,7 +61,7 @@ func (c *Client) Start() {
 	// 收取消息
 	go c.Receive()
 
-	time.Sleep(time.Millisecond * 100)
+	time.Sleep(time.Second)
 
 	c.ReadLine()
 }
@@ -70,6 +72,7 @@ func (c *Client) ReadLine() {
 		receiverId  uint64
 		sessionType int8
 	)
+
 	readLine := func(hint string, v interface{}) {
 		fmt.Println(hint)
 		_, err := fmt.Scanln(v)
@@ -77,6 +80,7 @@ func (c *Client) ReadLine() {
 			panic(err)
 		}
 	}
+
 	for {
 		readLine(">>", &msg)
 		readLine("接收人id(user_id/group_id): ", &receiverId)
@@ -93,9 +97,11 @@ func (c *Client) ReadLine() {
 			Msg:      message,
 			ClientId: c.GetClientId(),
 		}
+		fmt.Println("upMsg clientId: ", upMsg.ClientId)
 		c.SendMsg(pb.CmdType_CT_Message, upMsg)
 
 		ctx, cancelFunc := context.WithCancel(context.Background())
+
 		go func(ctx context.Context) {
 			maxRetry := ResendCountMax // 最大重试次数
 			retryCount := 0
@@ -114,6 +120,7 @@ func (c *Client) ReadLine() {
 						return
 					}
 					fmt.Println("消息超时 msg:", msg, "，第", retryCount+1, "次重试")
+					upMsg.ClientId = c.GetClientId()
 					c.SendMsg(pb.CmdType_CT_Message, upMsg)
 					retryCount++
 				}
@@ -163,7 +170,6 @@ func (c *Client) HandlerMessage(bytes []byte) {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("[receive server message]: ", msg)
 		switch msg.Type {
 		case pb.CmdType_CT_Sync:
 			syncMsg := new(pb.SyncOutputMsg)
@@ -205,7 +211,7 @@ func (c *Client) HandlerMessage(bytes []byte) {
 
 			switch ackMsg.Type {
 			case pb.ACKType_AT_Login:
-				fmt.Println("登录成功")
+				fmt.Println("[***登录websocket成功***]")
 			case pb.ACKType_AT_Up: // 收到上行消息的 ACK
 				// 取消超时重传
 				clientId := ackMsg.ClientId
@@ -214,9 +220,10 @@ func (c *Client) HandlerMessage(bytes []byte) {
 					// 取消超时重传
 					cancel()
 					delete(c.clientId2Cancel, clientId)
-					fmt.Println("取消超时重传，clientId:", clientId)
+					fmt.Println("收到server ACKType_AT_Up ACK，clientId:", clientId)
 				}
 				c.clientId2CancelMutex.Unlock()
+
 				// 更新客户端本地维护的 seq
 				seq := ackMsg.Seq
 				if c.seq < seq {
@@ -230,7 +237,7 @@ func (c *Client) HandlerMessage(bytes []byte) {
 
 // Login websocket 登录
 func (c *Client) Login() {
-	fmt.Println("websocket login...")
+	fmt.Println("[***正在登录websocket***]")
 	// 组装底层数据
 	loginMsg := &pb.LoginMsg{
 		Token: []byte(c.token),
@@ -323,14 +330,13 @@ func Login() *Client {
 	}
 	// 获取客户端 seq 序列号
 	var seq uint64
-	fmt.Print("Enter seq: ")
+	fmt.Print("Enter client seq: ")
 	fmt.Scanln(&seq)
 
 	client := &Client{
 		clientId2Cancel: make(map[uint64]context.CancelFunc),
 		seq:             seq,
 	}
-
 	client.token = respData.Data.Token
 	clientStr := respData.Data.UserId
 	client.userId, err = strconv.ParseUint(clientStr, 10, 64)
@@ -338,6 +344,6 @@ func Login() *Client {
 		panic(err)
 	}
 
-	fmt.Println("token:", client.token, "userId", client.userId)
+	logger.Slog.Info(fmt.Sprintf("token: %v, clientId: %v\n", client.token, client.clientId))
 	return client
 }

@@ -14,7 +14,7 @@ var (
 func GetServerClient(addr string) pb.ConnectClient {
 	client, err := grpc.Dial(addr, grpc.WithInsecure())
 	if err != nil {
-		logger.Slog.Error("Grpc Client Dial Failed ", "[ERROR]", err)
+		logger.Slog.Error("Grpc Client Dial Failed ", "err", err)
 		panic(err)
 	}
 	ConnServerClient = pb.NewConnectClient(client)

@@ -8,7 +8,8 @@ import (
 // HeartbeatChecker 心跳检测
 type HeartbeatChecker struct {
 	interval time.Duration // 心跳检测时间间隔
-	quit     chan struct{} // 退出信号
+
+	quit chan struct{} // 退出信号
 
 	server *Server // 所属服务端
 }

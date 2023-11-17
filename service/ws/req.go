@@ -88,6 +88,7 @@ func (r *Req) MessageHandler() {
 	// 消息解析 proto string -> struct
 	msg := new(pb.UpMsg)
 	err := proto.Unmarshal(r.data, msg)
+
 	if err != nil {
 		logger.Slog.Error("[MessageHandler]", "err", err)
 		return
@@ -95,7 +96,6 @@ func (r *Req) MessageHandler() {
 
 	// 实现消息可靠性
 	if !r.conn.CompareAndIncrClientID(msg.ClientId) {
-		fmt.Println("不是想要收到的 clientID，不进行处理, msg:", msg)
 		return
 	}
 
@@ -127,6 +127,7 @@ func (r *Req) MessageHandler() {
 		fmt.Println("[消息处理] 会话类型错误")
 		return
 	}
+
 	if err != nil {
 		fmt.Println("[消息处理] 系统错误")
 		return

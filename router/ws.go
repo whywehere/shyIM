@@ -2,6 +2,7 @@ package router
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
@@ -27,14 +28,14 @@ var upGrader = websocket.Upgrader{
 
 // WSRouter websocket 路由
 func WSRouter() {
-	server := ws.GetServer()
+	// connServerManager 单例
+	connServerManager := ws.GetServer()
 
 	// 开启worker工作池
-	server.StartWorkerPool()
+	connServerManager.StartWorkerPool()
 
 	// 开启心跳超时检测
-	//fmt.Println("HeartbeatInterval: ", time.Second*time.Duration(config.GlobalConfig.APP.HeartbeatInterval))
-	heartbeatChecker := ws.NewHeartbeatChecker(time.Second*time.Duration(config.GlobalConfig.APP.HeartbeatInterval), server)
+	heartbeatChecker := ws.NewHeartbeatChecker(time.Second*time.Duration(config.GlobalConfig.APP.HeartbeatInterval), connServerManager)
 
 	go heartbeatChecker.Start()
 
@@ -50,12 +51,12 @@ func WSRouter() {
 		// 升级协议  http -> websocket
 		WsConn, err := upGrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
-			logger.Slog.Error("[WebSocket Connect Failed]", "[ERROR]", err)
+			logger.Slog.Error("[WebSocket upGrade Failed]", "err", err)
 			return
 		}
 
 		// 初始化连接
-		conn := ws.NewConnection(server, WsConn, connID)
+		conn := ws.NewConnection(connServerManager, WsConn, connID)
 		connID++
 
 		// 开启读写线程
@@ -69,8 +70,8 @@ func WSRouter() {
 
 	go func() {
 		fmt.Println("websocket 启动：", srv.Addr)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s\n", err)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("listen: %v\n", err)
 		}
 	}()
 
@@ -79,7 +80,7 @@ func WSRouter() {
 	<-quit
 
 	// 关闭服务
-	server.Stop()
+	connServerManager.Stop()
 	heartbeatChecker.Stop()
 
 	// 5s 超时
