@@ -33,13 +33,13 @@ func (r *Req) Login() {
 	loginMsg := new(pb.LoginMsg)
 	err := proto.Unmarshal(r.data, loginMsg)
 	if err != nil {
-		fmt.Println("[用户登录] unmarshal error,err:", err)
+		logger.Slog.Error("[proto Unmarshal failed]", "err", err)
 		return
 	}
 	// 登录校验
 	userClaims, err := utils.AnalyseToken(string(loginMsg.Token))
 	if err != nil {
-		fmt.Println("[用户登录] AnalyseToken err:", err)
+		logger.Slog.Error("[AnalyseToken failed]", "err", err)
 		return
 	}
 
@@ -90,7 +90,7 @@ func (r *Req) MessageHandler() {
 	err := proto.Unmarshal(r.data, msg)
 
 	if err != nil {
-		logger.Slog.Error("[MessageHandler]", "err", err)
+		logger.Slog.Error(err.Error())
 		return
 	}
 
@@ -113,7 +113,7 @@ func (r *Req) MessageHandler() {
 	// 给自己发一份，消息落库但是不推送
 	seq, err := SendToUser(msg.Msg, msg.Msg.SenderId)
 	if err != nil {
-		fmt.Println("[SendToUser] err: ", err)
+		fmt.Println(err.Error())
 		return
 	}
 

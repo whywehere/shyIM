@@ -41,6 +41,9 @@ type Config struct {
 	RabbitMQ struct {
 		URL string `mapstructure:"url"`
 	} `mapstructure:"rabbitmq"`
+	Kafka struct {
+		URL string `mapstructure:"url"`
+	} `mapstructure:"kafka"`
 }
 
 func Init(configPath string) error {

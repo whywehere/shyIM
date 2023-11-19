@@ -2,10 +2,11 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"shyIM/config"
 	"shyIM/pkg/db"
 	"shyIM/pkg/etcd"
-	"shyIM/pkg/mq"
+	"shyIM/pkg/kafka"
 	"shyIM/router"
 )
 
@@ -20,12 +21,13 @@ func main() {
 	if err := db.InitDB(); err != nil {
 		panic(err)
 	}
-	mq.InitMessageMQ(config.GlobalConfig.RabbitMQ.URL)
-
+	kafka.InitMQ([]string{config.GlobalConfig.Kafka.URL})
+	fmt.Println("kafka initialized successfully")
 	go etcd.Start()
 
 	go router.HTTPRouter()
 
 	go router.WSRouter()
+
 	select {}
 }

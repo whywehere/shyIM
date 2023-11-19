@@ -9,8 +9,8 @@ import (
 	"shyIM/model"
 	"shyIM/model/cache"
 	"shyIM/pkg/etcd"
+	"shyIM/pkg/kafka"
 	"shyIM/pkg/logger"
-	"shyIM/pkg/mq"
 	"shyIM/pkg/protocol/pb"
 	"shyIM/pkg/rpc"
 	"shyIM/service"
@@ -29,7 +29,7 @@ func GetOutputMsg(cmdType pb.CmdType, code int32, message proto.Message) ([]byte
 	if message != nil {
 		msgBytes, err := proto.Marshal(message)
 		if err != nil {
-			logger.Slog.Error("[GetOutputMsg] message marshal failed", "[ERROR]", err)
+			logger.Slog.Error("proto Marshal failed", "err", err)
 			return nil, err
 		}
 		output.Data = msgBytes
@@ -37,7 +37,7 @@ func GetOutputMsg(cmdType pb.CmdType, code int32, message proto.Message) ([]byte
 
 	bytes, err := proto.Marshal(output)
 	if err != nil {
-		logger.Slog.Error("[GetOutputMsg] message marshal failed", "[ERROR]", err)
+		logger.Slog.Error("proto Marshal failed", "err", err)
 		return nil, err
 	}
 	return bytes, nil
@@ -48,13 +48,13 @@ func SendToUser(msg *pb.Message, userId uint64) (uint64, error) {
 	// 获取接受者 seqId
 	seq, err := service.GetUserNextSeq(userId)
 	if err != nil {
-		fmt.Println("[GetOutputMsg] 获取 seq 失败,err:", err)
+		logger.Slog.Error("get next seq failed", "err", err)
 		return 0, err
 	}
 	msg.Seq = seq
 
 	// 发给MQ
-	if err = mq.MessageMQ.Publish(model.MessageToProtoMarshal(&model.Message{
+	if err = kafka.MQ.Publish(model.MessageToProtoMarshal(&model.Message{
 		UserID:      userId,
 		SenderID:    msg.SenderId,
 		SessionType: int8(msg.SessionType),
@@ -64,7 +64,7 @@ func SendToUser(msg *pb.Message, userId uint64) (uint64, error) {
 		Seq:         seq,
 		SendTime:    time.UnixMilli(msg.SendTime),
 	})); err != nil {
-		logger.Slog.Error("[GetOutputMsg] mq.MessageMQ.Publish(messageBytes) 失败", "[ERROR]", err)
+		logger.Slog.Error(err.Error())
 		return 0, err
 	}
 
@@ -76,7 +76,7 @@ func SendToUser(msg *pb.Message, userId uint64) (uint64, error) {
 	// 组装消息
 	bytes, err := GetOutputMsg(pb.CmdType_CT_Message, int32(common.OK), &pb.PushMsg{Msg: msg})
 	if err != nil {
-		logger.Slog.Error("[GetOutputMsg] message marshal failed", "[ERROR]", err)
+		logger.Slog.Error(err.Error())
 		return 0, err
 	}
 
@@ -104,10 +104,10 @@ func Send(receiverId uint64, bytes []byte) error {
 
 	// 不在线
 	if rpcAddr == "" {
-		fmt.Println("[Message Send] 用户不在线: ", receiverId)
+		fmt.Println("用户不在线: ", receiverId)
 		return nil
 	}
-	fmt.Println("[Message Send] 用户在线: ", receiverId, "rpcAddr = ", rpcAddr)
+	fmt.Println("用户在线: ", receiverId, "rpcAddr = ", rpcAddr)
 
 	// 查询是否在本地
 	conn := ConnManager.GetConn(receiverId)
@@ -128,7 +128,7 @@ func Send(receiverId uint64, bytes []byte) error {
 	})
 
 	if err != nil {
-		logger.Slog.Error("[Send] DeliverMessage Failed", "[ERROR]", err)
+		logger.Slog.Error("DeliverMessage Failed", "err", err)
 		return err
 	}
 
@@ -194,9 +194,10 @@ func SendToGroup(msg *pb.Message) error {
 	}
 
 	// 发给MQ
-	err = mq.MessageMQ.Publish(model.MessageToProtoMarshal(messages...))
+	err = kafka.MQ.Publish(model.MessageToProtoMarshal(messages...))
+	//err = mq.MessageMQ.Publish(model.MessageToProtoMarshal(messages...))
 	if err != nil {
-		fmt.Println("[消息处理] 群聊消息发送 MQ 失败,err:", err)
+		logger.Slog.Error(err.Error())
 		return err
 	}
 	// 组装消息，进行推送

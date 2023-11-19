@@ -57,7 +57,6 @@ func (c *Conn) Start() {
 
 // StartReader 用于从客户端中读取数据
 func (c *Conn) StartReader() {
-	logger.Slog.Info("[Reader Goroutine is running]")
 	defer logger.Slog.Info(fmt.Sprintf(c.RemoteAddr() + "[conn Reader exit!]"))
 	defer c.Stop()
 
@@ -65,7 +64,6 @@ func (c *Conn) StartReader() {
 		// 阻塞读
 		_, data, err := c.Socket.ReadMessage()
 		if err != nil {
-			fmt.Println("[Socket.ReadMessage] ", err)
 			logger.Slog.Error("[websocket ReadMessage Failed]", "err", err)
 			return
 		}
@@ -77,10 +75,10 @@ func (c *Conn) StartReader() {
 // HandlerMessage 消息处理
 func (c *Conn) HandlerMessage(bytes []byte) {
 	// TODO 所有错误都需要写回给客户端
-	// 消息解析 proto string -> struct
+
 	input := new(pb.Input)
 	if err := proto.Unmarshal(bytes, input); err != nil {
-		logger.Slog.Error("proto unmarshal ", "error", err)
+		logger.Slog.Error("[proto unmarshal failed]", "err", err)
 		return
 	}
 	// 对未登录用户进行拦截

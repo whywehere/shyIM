@@ -14,6 +14,7 @@ var (
 
 func Start() {
 	hostPort := fmt.Sprintf("%s:%s", config.GlobalConfig.APP.IP, config.GlobalConfig.APP.RPCPort)
+	// NewRegistry 服务注册
 	if err := NewRegistry(common.EtcdServerList+hostPort, hostPort, 5); err != nil {
 		logger.Slog.Error("Failed to create a registry", "[ERROR]", err)
 		return

@@ -31,11 +31,13 @@ func NewDiscovery() (*Discovery, error) {
 }
 
 func (d *Discovery) WatchServices(prefix string) {
+	// 获取以prefix开头的services(rpc address)
 	resp, err := d.client.Get(context.TODO(), prefix, clientV3.WithPrefix())
 	if err != nil {
 		logger.Slog.Error("Failed to Get Discovery", "err", err)
 		return
 	}
+	// 将所有services 存入 serverMap
 	for i := range resp.Kvs {
 		if v := resp.Kvs[i]; v != nil {
 			d.serverMap.Store(string(v.Key), string(v.Value))

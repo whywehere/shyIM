@@ -201,7 +201,7 @@ func (c *Client) HandlerMessage(bytes []byte) {
 			if c.seq < seq {
 				c.seq = seq
 			}
-			fmt.Println("更新 seq:", c.seq)
+			//fmt.Println("更新 seq:", c.seq)
 		case pb.CmdType_CT_ACK: // 收到 ACK
 			ackMsg := new(pb.ACKMsg)
 			err = proto.Unmarshal(msg.Data, ackMsg)
@@ -220,7 +220,7 @@ func (c *Client) HandlerMessage(bytes []byte) {
 					// 取消超时重传
 					cancel()
 					delete(c.clientId2Cancel, clientId)
-					fmt.Println("收到server ACKType_AT_Up ACK，clientId:", clientId)
+					//fmt.Println("收到server ACKType_AT_Up ACK，clientId:", clientId)
 				}
 				c.clientId2CancelMutex.Unlock()
 
