@@ -45,7 +45,7 @@ func (h *HeartbeatChecker) Stop() {
 func (h *HeartbeatChecker) check() {
 	logger.Slog.Info("[heartbeat check started]", "Time", time.Now().Format("2006-01-02 15:04:05"))
 	// 已验证的连接
-	conns := h.server.GetConnAll()
+	conns := h.server.GetAllConn()
 	for _, conn := range conns {
 		if !conn.IsAlive() {
 			conn.Stop()

@@ -57,7 +57,6 @@ func (c *Conn) Start() {
 
 // StartReader 用于从客户端中读取数据
 func (c *Conn) StartReader() {
-	defer logger.Slog.Info(fmt.Sprintf(c.RemoteAddr() + "[conn Reader exit!]"))
 	defer c.Stop()
 
 	for {
@@ -78,7 +77,7 @@ func (c *Conn) HandlerMessage(bytes []byte) {
 
 	input := new(pb.Input)
 	if err := proto.Unmarshal(bytes, input); err != nil {
-		logger.Slog.Error("[proto unmarshal failed]", "err", err)
+		logger.Slog.Error(err.Error())
 		return
 	}
 	// 对未登录用户进行拦截
@@ -86,12 +85,14 @@ func (c *Conn) HandlerMessage(bytes []byte) {
 		return
 	}
 
+	// 构造请求体(包含消息体、连接对象、处理函数)
 	req := &Req{
 		conn: c,
 		data: input.Data,
 		f:    nil,
 	}
 
+	// 针对不同的消息类型, 选择不同的逻辑函数
 	switch input.Type {
 	case pb.CmdType_CT_Login: // 登录
 		req.f = req.Login
@@ -104,7 +105,7 @@ func (c *Conn) HandlerMessage(bytes []byte) {
 	case pb.CmdType_CT_Sync: // 离线消息同步
 		req.f = req.Sync
 	default:
-		logger.Slog.Info("Unknown command type")
+		fmt.Println("[unknown cmdType]")
 	}
 
 	if req.f == nil {
@@ -125,7 +126,7 @@ func (c *Conn) SendMsg(userId uint64, bytes []byte) {
 
 	// 已关闭
 	if c.isClose {
-		logger.Slog.Info("connection closed when send msg")
+		fmt.Println(fmt.Sprintf("userID: %d 已下线 不能发送消息", c.UserId))
 		return
 	}
 
@@ -135,7 +136,7 @@ func (c *Conn) SendMsg(userId uint64, bytes []byte) {
 		return
 	}
 
-	// 发送
+	// 每个客户端都对应一个conn conn.sendCh 用来监听是否有消息发送过来
 	conn.sendCh <- bytes
 
 	return

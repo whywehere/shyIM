@@ -3,6 +3,7 @@ package ws
 import (
 	"fmt"
 	"shyIM/config"
+	"shyIM/pkg/logger"
 	"sync"
 )
 
@@ -15,10 +16,11 @@ var (
 // 1. 连接管理
 // 2. 工作队列
 type Server struct {
-	connMap   sync.Map    // 登录的用户连接 k-用户userid v-连接
+	connMap   sync.Map    // 登录的用户连接 k: userid, v: 连接对象
 	taskQueue []chan *Req // 工作池
 }
 
+// GetServer 返回一个ServerManager单例
 func GetServer() *Server {
 	once.Do(func() {
 		ConnManager = &Server{
@@ -28,38 +30,20 @@ func GetServer() *Server {
 	return ConnManager
 }
 
-// Stop 关闭服务
-func (cm *Server) Stop() {
-	fmt.Println("server stop ...")
-	ch := make(chan struct{}, 1000) // 控制并发数
-	var wg sync.WaitGroup
-	connAll := cm.GetConnAll()
-	for _, conn := range connAll {
-		ch <- struct{}{}
-		wg.Add(1)
-		c := conn
-		go func() {
-			defer func() {
-				wg.Done()
-				<-ch
-			}()
-			c.Stop()
-		}()
-	}
-	close(ch)
-	wg.Wait()
-}
+// ServerMap Operation:
 
 // AddConn 添加连接
 func (cm *Server) AddConn(userId uint64, conn *Conn) {
 	cm.connMap.Store(userId, conn)
-	fmt.Printf("connection UserId=%d add to Server\n", userId)
+	fmt.Printf("UserId=%d 已上线\n", userId)
+	logger.Slog.Info(fmt.Sprintf("userId=%d has added to ServerMap", userId))
 }
 
 // RemoveConn 删除连接
 func (cm *Server) RemoveConn(userId uint64) {
 	cm.connMap.Delete(userId)
-	fmt.Printf("connection UserId=%d remove from Server\n", userId)
+	fmt.Printf("UserId=%d 已下线\n", userId)
+	logger.Slog.Info(fmt.Sprintf("userId=%d has removeed from ServerMap", userId))
 }
 
 // GetConn 根据userid获取相应的连接
@@ -71,15 +55,15 @@ func (cm *Server) GetConn(userId uint64) *Conn {
 	return nil
 }
 
-// GetConnAll 获取全部连接
-func (cm *Server) GetConnAll() []*Conn {
-	conns := make([]*Conn, 0)
+// GetAllConn 获取全部连接
+func (cm *Server) GetAllConn() []*Conn {
+	connects := make([]*Conn, 0)
 	cm.connMap.Range(func(key, value interface{}) bool {
 		conn := value.(*Conn)
-		conns = append(conns, conn)
+		connects = append(connects, conn)
 		return true
 	})
-	return conns
+	return connects
 }
 
 // SendMessageAll 进行本地推送
@@ -115,6 +99,19 @@ func (cm *Server) StartWorkerPool() {
 	}
 }
 
+// SendMsgToTaskQueue 将消息交给 taskQueue，由 worker 调度处理
+func (cm *Server) SendMsgToTaskQueue(req *Req) {
+	/*
+		根据ConnID来分配当前的连接应该由哪个worker负责处理，保证同一个连接的消息处理串行
+		轮询的平均分配法则 得到需要处理此条连接的workerID
+	*/
+
+	workerID := req.conn.ConnId % uint64(len(cm.taskQueue))
+
+	// 将消息发给对应的 taskQueue
+	cm.taskQueue[workerID] <- req
+}
+
 // StartOneWorker 启动 worker 的工作流程
 func (cm *Server) StartOneWorker(workerID int, taskQueue chan *Req) {
 	fmt.Println("Worker ID = ", workerID, " is started.")
@@ -126,13 +123,24 @@ func (cm *Server) StartOneWorker(workerID int, taskQueue chan *Req) {
 	}
 }
 
-// SendMsgToTaskQueue 将消息交给 taskQueue，由 worker 调度处理
-func (cm *Server) SendMsgToTaskQueue(req *Req) {
-	// 根据ConnID来分配当前的连接应该由哪个worker负责处理，保证同一个连接的消息处理串行
-	// 轮询的平均分配法则 得到需要处理此条连接的workerID
-	workerID := req.conn.ConnId % uint64(len(cm.taskQueue))
-
-	// 将消息发给对应的 taskQueue
-	cm.taskQueue[workerID] <- req
-
+// Stop 关闭服务
+func (cm *Server) Stop() {
+	fmt.Println("server stop ...")
+	ch := make(chan struct{}, 1000) // 控制并发数
+	var wg sync.WaitGroup
+	connAll := cm.GetAllConn()
+	for _, conn := range connAll {
+		ch <- struct{}{}
+		wg.Add(1)
+		c := conn
+		go func() {
+			defer func() {
+				wg.Done()
+				<-ch
+			}()
+			c.Stop()
+		}()
+	}
+	close(ch)
+	wg.Wait()
 }

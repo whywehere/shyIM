@@ -25,15 +25,14 @@ type Req struct {
 func (r *Req) Login() {
 	// 检查用户是否已登录 只能防止同一个连接多次调用 Login
 	if r.conn.GetUserId() != 0 {
-		fmt.Println("[用户登录] 用户已登录")
+		fmt.Printf(fmt.Sprintf("User[%v] has logged in\n", r.conn.GetUserId))
 		return
 	}
 
-	// 消息解析 proto string -> struct
 	loginMsg := new(pb.LoginMsg)
 	err := proto.Unmarshal(r.data, loginMsg)
 	if err != nil {
-		logger.Slog.Error("[proto Unmarshal failed]", "err", err)
+		logger.Slog.Error(err.Error())
 		return
 	}
 	// 登录校验
@@ -47,7 +46,7 @@ func (r *Req) Login() {
 	onlineAddr, err := cache.GetUserOnline(userClaims.UserId)
 	if onlineAddr != "" {
 		// TODO 更友好的提示
-		fmt.Println("[用户登录] 用户已经在其他连接登录")
+		fmt.Printf(fmt.Sprintf("User[%v] has logged in another device\n", r.conn.GetUserId))
 		r.conn.Stop()
 		return
 	}
@@ -56,7 +55,8 @@ func (r *Req) Login() {
 	grpcServerAddr := fmt.Sprintf("%s:%s", config.GlobalConfig.APP.IP, config.GlobalConfig.APP.RPCPort)
 	err = cache.SetUserOnline(userClaims.UserId, grpcServerAddr)
 	if err != nil {
-		fmt.Println("[用户登录] 系统错误")
+		logger.Slog.Error(err.Error())
+		fmt.Println("Internal System Error")
 		return
 	}
 
@@ -69,7 +69,7 @@ func (r *Req) Login() {
 	// 回复ACK
 	bytes, err := GetOutputMsg(pb.CmdType_CT_ACK, int32(common.OK), &pb.ACKMsg{Type: pb.ACKType_AT_Login})
 	if err != nil {
-		fmt.Println("[用户登录] proto.Marshal err:", err)
+		logger.Slog.Error(err.Error())
 		return
 	}
 
@@ -81,11 +81,13 @@ func (r *Req) Heartbeat() {
 	// TODO 更新当前用户状态，不做回复
 }
 
-// MessageHandler 消息处理，处理客户端发送给服务端的消息
-// A 发送消息给服务端，服务端收到消息处理后发给 B
-// 包括：单聊、群聊
+/*
+MessageHandler 消息处理，处理客户端发送给服务端的消息
+A客户端发送消息给服务端，服务端收到消息处理后发给B客户端
+包括：单聊、群聊
+*/
 func (r *Req) MessageHandler() {
-	// 消息解析 proto string -> struct
+
 	msg := new(pb.UpMsg)
 	err := proto.Unmarshal(r.data, msg)
 
@@ -100,13 +102,12 @@ func (r *Req) MessageHandler() {
 	}
 
 	if msg.Msg.SenderId != r.conn.GetUserId() {
-		fmt.Println("[消息处理] 发送者有误")
 		return
 	}
 
 	// 单聊不能发给自己
 	if msg.Msg.SessionType == pb.SessionType_ST_Single && msg.Msg.ReceiverId == r.conn.GetUserId() {
-		fmt.Println("[消息处理] 接收者有误")
+		fmt.Println("[消息处理] 不能将消息发送给自己")
 		return
 	}
 
@@ -124,12 +125,11 @@ func (r *Req) MessageHandler() {
 	case pb.SessionType_ST_Group:
 		err = SendToGroup(msg.Msg)
 	default:
-		fmt.Println("[消息处理] 会话类型错误")
 		return
 	}
 
 	if err != nil {
-		fmt.Println("[消息处理] 系统错误")
+		fmt.Println("[消息发送] 系统错误")
 		return
 	}
 
@@ -140,7 +140,7 @@ func (r *Req) MessageHandler() {
 		Seq:      seq,          // 回复客户端当前其 seq
 	})
 	if err != nil {
-		fmt.Println("[消息处理] proto.Marshal err:", err)
+		fmt.Println(err.Error())
 		return
 	}
 	// 回复发送 Message 请求的客户端 A
@@ -149,17 +149,20 @@ func (r *Req) MessageHandler() {
 
 // Sync  消息同步，拉取离线消息
 func (r *Req) Sync() {
+
 	msg := new(pb.SyncInputMsg)
+
 	err := proto.Unmarshal(r.data, msg)
 	if err != nil {
-		fmt.Println("[离线消息] unmarshal error,err:", err)
+		logger.Slog.Error(err.Error())
 		return
 	}
 
 	// 根据 seq 查询，得到比 seq 大的用户消息
 	messages, hasMore, err := model.ListByUserIdAndSeq(r.conn.GetUserId(), msg.Seq, model.MessageLimit)
 	if err != nil {
-		fmt.Println("[离线消息] model.ListByUserIdAndSeq error, err:", err)
+		fmt.Println("离线消息同步失败")
+		logger.Slog.Error(err.Error())
 		return
 	}
 	pbMessage := model.MessagesToPB(messages)
@@ -169,7 +172,7 @@ func (r *Req) Sync() {
 		HasMore:  hasMore,
 	})
 	if err != nil {
-		fmt.Println("[离线消息] proto.Marshal err:", err)
+		logger.Slog.Error(err.Error())
 		return
 	}
 	// 回复
