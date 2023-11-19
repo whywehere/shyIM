@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"shyIM/pkg/logger"
 	"shyIM/pkg/protocol/pb"
 	"strconv"
 	"sync"
@@ -160,10 +159,10 @@ func (c *Client) HandlerMessage(bytes []byte) {
 
 	outputBatchMsg := new(pb.OutputBatch)
 	err := proto.Unmarshal(bytes, outputBatchMsg)
-
 	if err != nil {
 		panic(err)
 	}
+
 	for _, output := range outputBatchMsg.Outputs {
 		msg := new(pb.Output)
 		err := proto.Unmarshal(output, msg)
@@ -180,7 +179,7 @@ func (c *Client) HandlerMessage(bytes []byte) {
 
 			seq := c.seq
 			for _, message := range syncMsg.Messages {
-				fmt.Printf("Recive Offline message: %v\n", message)
+				fmt.Printf("[离线消息 %v] %v\n", message.SendTime, message.Content)
 				if seq < message.Seq {
 					seq = message.Seq
 				}
@@ -195,13 +194,13 @@ func (c *Client) HandlerMessage(bytes []byte) {
 			if err != nil {
 				panic(err)
 			}
-			fmt.Printf("收到消息：%s, 发送人id：%d, 会话类型：%s, 接收时间:%s\n", pushMsg.Msg.GetContent(), pushMsg.Msg.GetSenderId(), pushMsg.Msg.SessionType, time.Now().Format("2006-01-02 15:04:05"))
+
+			fmt.Printf("收到消息：%s, 发送人id：%d, 接收时间:%s\n", pushMsg.Msg.GetContent(), pushMsg.Msg.GetSenderId(), time.Now().Format("2006-01-02 15:04:05"))
 			// 更新 seq
 			seq := pushMsg.Msg.Seq
 			if c.seq < seq {
 				c.seq = seq
 			}
-			//fmt.Println("更新 seq:", c.seq)
 		case pb.CmdType_CT_ACK: // 收到 ACK
 			ackMsg := new(pb.ACKMsg)
 			err = proto.Unmarshal(msg.Data, ackMsg)
@@ -211,19 +210,16 @@ func (c *Client) HandlerMessage(bytes []byte) {
 
 			switch ackMsg.Type {
 			case pb.ACKType_AT_Login:
-				fmt.Println("[***登录websocket成功***]")
+				fmt.Println("[成功登录websocket]")
 			case pb.ACKType_AT_Up: // 收到上行消息的 ACK
 				// 取消超时重传
 				clientId := ackMsg.ClientId
 				c.clientId2CancelMutex.Lock()
 				if cancel, ok := c.clientId2Cancel[clientId]; ok {
-					// 取消超时重传
 					cancel()
 					delete(c.clientId2Cancel, clientId)
-					//fmt.Println("收到server ACKType_AT_Up ACK，clientId:", clientId)
 				}
 				c.clientId2CancelMutex.Unlock()
-
 				// 更新客户端本地维护的 seq
 				seq := ackMsg.Seq
 				if c.seq < seq {
@@ -237,7 +233,7 @@ func (c *Client) HandlerMessage(bytes []byte) {
 
 // Login websocket 登录
 func (c *Client) Login() {
-	fmt.Println("[***正在登录websocket***]")
+	fmt.Println("[正在登录websocket]")
 	// 组装底层数据
 	loginMsg := &pb.LoginMsg{
 		Token: []byte(c.token),
@@ -294,7 +290,6 @@ func Login() *Client {
 	// 向服务器发送 POST 请求
 	resp, err := http.PostForm(httpAddr+"/login", data)
 	if err != nil {
-		fmt.Println("Error sending HTTP request:", err)
 		panic(err)
 	}
 	defer resp.Body.Close()
@@ -344,6 +339,5 @@ func Login() *Client {
 		panic(err)
 	}
 
-	logger.Slog.Info(fmt.Sprintf("token: %v, clientId: %v\n", client.token, client.clientId))
 	return client
 }
