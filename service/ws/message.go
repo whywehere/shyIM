@@ -84,16 +84,16 @@ func SendToUser(msg *pb.Message, userId uint64) (uint64, error) {
 	return 0, Send(userId, bytes)
 }
 
-// Send 消息转发
-// 是否在线 ---否---> 不进行推送
-//    |
-//    是
-//    ↓
-//  是否在本地 --否--> RPC 调用
-//    |
-//    是
-//    ↓
-//  消息发送
+//Send 消息转发
+//是否在线 ---否---> 不进行推送
+//   |
+//   是
+//   ↓
+// 是否在本地 --否--> RPC 调用
+//   |
+//   是
+//   ↓
+// 消息发送
 
 func Send(receiverId uint64, bytes []byte) error {
 	// 查询是否在线

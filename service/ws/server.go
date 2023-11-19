@@ -30,7 +30,7 @@ func GetServer() *Server {
 	return ConnManager
 }
 
-// ServerMap Operation:
+// ServerMap Operations:
 
 // AddConn 添加连接
 func (cm *Server) AddConn(userId uint64, conn *Conn) {
